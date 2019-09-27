@@ -167,6 +167,7 @@ void loop(){
       eyesPurple(255);
       delay(5000);
       eyesOff();
+      break;
     }
 
   Serial.print("Left: ");Serial.print( leftLight); Serial.print( "\t Right: "); Serial.print( rightLight); Serial.print("State: "); Serial.println(STATE);
