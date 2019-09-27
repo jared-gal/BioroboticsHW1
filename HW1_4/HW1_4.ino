@@ -11,23 +11,39 @@ behavior upon detecting another robot, but will otherwise roam the environment
 //*****************************************************************************************************
 #include "WinkHardware.h"  // Including basic hardware definitions for working with the 
                            // wink device
+//constants relevant to movement speed
+#define CHASE_SPEED 50   //a max additional speed for the robot when chasing prey
 
-#define SENSOR_MOD 0.125   //a modification parameter for a read sensor value to ensure that it is
-                          // scaled to a more appropriate level
+#define BASE_SPEED 50     //base speed for the robot to travel with
 
-#define BASE_SPEED 80     //base speed for the robot to travel with
 
-#define DETECT_THRESH 200 //a parameter that represents ambient light levels coincident with another robot
+//constants relevant to light sensors
+#define DETECT_THRESH 30 //a parameter that represents ambient light levels coincident with another robot
                           //being "visible"
 
-#define CAUGHT_THRESH 400 // a parameter that represents when ambient light levels are high enough to 
+#define CAUGHT_THRESH 225 // a parameter that represents when ambient light levels are high enough to 
                           //determine a prey is "caught"
+                          
+#define LIGHT_WEIGHT_L .03   //a parameter that corresponds to a weight for left motor values
 
-#define WALL_THRESH 30   //a parameter to determine when the wink has encountered a wall or not
+#define LIGHT_WEIGHT_R .02   //a parameter that corresponds to a weight for right motor values
 
-#define OB_THRESH_L 200   //a parameter that corresponds to detecting an obstacle on the left side
 
-#define OB_THRESH_R 200   //a parameter that corresponds to detecting an obstacle on the right side
+//constants relevant to object/barrier detection
+#define OB_THRESH_L 800   //a parameter that corresponds to detecting an obstacle on the left side
+
+#define OB_THRESH_R 700   //a parameter that corresponds to detecting an obstacle on the right side
+
+
+//defining the states of operation
+
+#define WANDER 0
+#define VEER_L 1
+#define VEER_R 2
+#define DETECTED 3
+#define CAUGHT 4
+
+
 
 //*****************************************************************************************************
                           
@@ -35,37 +51,42 @@ behavior upon detecting another robot, but will otherwise roam the environment
 //predator shema variables
 float rightLight;         //read value of the right light sensor
 float leftLight;          //read value of the right light sensor
-boolean caught;           // whether or not the prey is caught
-boolean detected;         //whether or not a prey is detected
 
 //variables relevant to navigating the maze
 float rightLine;          //read value of the right inner line sensor
 float leftLine;           //read value of the left inner line sensor
 int rightMot;
 int leftMot;
-float wallS;              //read value of the headlight sensor
-boolean veer_l;           //whether we need to veer left
-boolean veer_r;           //whether we need to veer right
-boolean wall;             //presence of a wall in front of the robot
+
+//variable for what state the robot is in
+int STATE;
 
 
 //*****************************************************************************************************
+//helper funtions for operation
+//this function takes in the light sensor values and then operates the wink
+//like a Braitenberg Vehicle 2b to chase the prey 
+void BV_2b(int left,int right){
+  //BV 2b has a crossed positive relation between sensor and motor
+  //we want to keep the motor scaled to values between 0 and CHASE_SPEED + BASE_SPEED 
+  left = left*LIGHT_WEIGHT_L*CHASE_SPEED + BASE_SPEED;
+  right = right*LIGHT_WEIGHT_R*CHASE_SPEED + BASE_SPEED;
+  motors(right,left);
+  return;
+}
+
 
 void setup(){
   hardwareBegin();        //initialize Wink's brain to work with his circuitry
   playStartChirp();       //Play startup chirp and blink eyes
-  eyesPurple(255);        //set the initial eye color to purple
   rightLight =0;          //initializing to zero
   leftLight =0;           //initializing to zero
   rightLine =0;           //initializing to zero
   leftLine =0;            //initializing to zero
-  caught = false;         //initializing to false
-  detected = false;       //initializing to false
-  veer_l = false;         //initializing to false
-  veer_r = false;         //initializing to false
-  wall = false;           //initializing to false
-  
-    
+  digitalWrite(LineLeftOuter,LOW);       //turn off outer IR light sources
+  digitalWrite(LineRightOuter,LOW);
+  STATE = WANDER;
+ 
 }
 
 //*****************************************************************************************************
@@ -78,66 +99,82 @@ about the environment in search of prey.
 
 void loop(){
 
-  digitalWrite(Headlight,HIGH); //start sensing headlight
   //The first step of the loop is to find the measure of all sensors to determine what state should be entered
+  //process for reading the line sensors, this process is from the provided example code for the wink
+  //module, specifically Wink CH14 BottomSenseBasics_EX01 
+  digitalWrite(LineLeftInner,LOW);
+  digitalWrite(LineRightInner,LOW);
+  delayMicroseconds(300);
+  leftLine = analogRead(LineSenseLeft);
+  rightLine = analogRead(LineSenseRight);
+  digitalWrite(LineLeftInner,HIGH);
+  digitalWrite(LineRightInner,HIGH);
+  delayMicroseconds(300);
+  leftLine = analogRead(LineSenseLeft) - leftLine;
+  rightLine= analogRead(LineSenseRight) - rightLine;
+  digitalWrite(LineLeftInner,LOW);
+  digitalWrite(LineRightInner,LOW);
+  //end of reading line sensors
+
+  //next is to read the Ambient Sensors 
   rightLight = analogRead(AmbientSenseRight);
   leftLight = analogRead(AmbientSenseLeft);
-  rightLine = analogRead(LineRightInner);
-  leftLine = analogRead(LineLeftInner);
-  wallS = analogRead(AmbientSenseCenter);
 
   //next we set some arbitrary speeds for the robot to move in after execution 
-  rightMot = BASE_SPEED + random(20);
-  leftMot = BASE_SPEED + random(20);
+  rightMot = BASE_SPEED + random(-10,10);
+  leftMot = BASE_SPEED - random(-10,10);
 
-  //determining if the read values are large enought to trigger the given responses
-  //case one is for the wall sensing 
-  if(wallS > WALL_THRESH) wall = true;
-  else wall = false;
+  //determining if the read values are large enought to trigger state transitions
+  //case one is for right object detection
+  if(rightLine < OB_THRESH_R) STATE = VEER_L;
 
-  Serial.print(wall);
-  //case two is for right object detection
-  if(rightLine > OB_THRESH_R) veer_l = true;
-  else veer_l = false;
- 
-  //case three is for left obj detection
-  if(leftLine > OB_THRESH_L) veer_r = true;
-  else veer_r = false;
-
-  //case of prey detection
-  if((rightLight+leftLight) > DETECT_THRESH) detected = true;
-  else detected = false;
+  //case two is for left obj detection
+  else if(leftLine < OB_THRESH_L) STATE = VEER_R;
 
   //case of prey being caught
-  if((rightLight+leftLight) > CAUGHT_THRESH) caught = true;
-  else caught = false;
+  else if((rightLight+leftLight) > CAUGHT_THRESH) STATE = CAUGHT;
+  
+  //case of prey detection
+  else if((rightLight+leftLight) > DETECT_THRESH) STATE=DETECTED;
+
+  else STATE = WANDER;
 
   //performing functions based on previous readings
   //if the robot detects a wall or has come directly into contact with an object
   //the result is to simply spin in place before heading off in new direction
-  if(veer_l){
-    spinLeft(50);
-    delay(2);
-  }
-  else if(veer_l and veer_r){}
 
-/*
-  //ensuring the motor speeds are not negative so the vehicle just stops rather than 
-  //constantly oscillating between forward and back damaging the motors potentially
-  rightLightSensor = max(0,rightLightSensor);
-  leftLightSensor = max(0,leftLightSensor);
+  switch(STATE){
 
-  //after finding the sensor values they can then be written to the motors as 
-  //desired speeds of operation
-  motors(((int) leftLightSensor), ((int) rightLightSensor));
-  */
-  //a simple wait at the end of the loop so that the robot isn't acting too spastically
-  motors(leftMot, rightMot);
+    //case zero, the robot wanders
+    case WANDER:
+      motors(leftMot, rightMot);
+      break;
+    case VEER_L:
+      spinLeft(BASE_SPEED);
+      delay(300);
+      motors(BASE_SPEED, BASE_SPEED);
+      break;
+    case VEER_R:
+      spinRight(BASE_SPEED);
+      delay(300);
+      motors(BASE_SPEED, BASE_SPEED);
+      break;
+    case DETECTED:
+      BV_2b(leftLight, rightLight);
+      break;
+    case CAUGHT:
+      beStill();
+      eyesPurple(255);
+      delay(5000);
+      eyesOff();
+    }
+
+  Serial.print("Left: ");Serial.print( leftLight); Serial.print( "\t Right: "); Serial.print( rightLight); Serial.print("State: "); Serial.println(STATE);
+
   delay(100);
 
 
 } //closing curly of the “loop()” function
-
 
 
 
