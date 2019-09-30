@@ -13,23 +13,23 @@ avoidance and not much else
                            // machine language Wink can understand.
 
 
-#define BASE_SPEED 30
+#define BASE_SPEED 30     //base speed of the prey
+
 #define OB_THRESH_L 300   //a parameter that corresponds to detecting an obstacle on the left side
 
 #define OB_THRESH_R 300   //a parameter that corresponds to detecting an obstacle on the right side
 
+//the possible states for the prey, the same as the first few for the predator
 #define WANDER 0
 #define TURN_AROUND 1
 #define VEER_L 2
 #define VEER_R 3
 
 //variables relevant to navigating the maze
-float rightLine;          //read value of the right inner line s\
-ensor
-float leftLine;           //read value of the left inner line se\
-nsor
-int rightMot;
-int leftMot;
+float rightLine;          //read value of the right inner line sensor
+float leftLine;           //read value of the left inner line sensor
+int rightMot;             //default value for right motor for wandering
+int leftMot;              //default value for left motor for wandering
 
 //variable for what state the robot is in
 int STATE;
@@ -40,12 +40,12 @@ int STATE;
 void setup(){
   hardwareBegin();        //initialize Wink's brain to work with his circuitry
   playStartChirp();       //Play startup chirp and blink eyes
-  eyesWhite(255);
-  rightMot=0;
-  leftMot=0;
-  rightLine=0;
-  leftLine=0;
-  STATE=WANDER;
+  eyesWhite(255);         //turn the eyes to white and all the way on
+  rightMot=0;             //initializing to 0
+  leftMot=0;              //initializing to 0
+  rightLine=0;            //initializing to 0
+  leftLine=0;             //initializing to 0
+  STATE=WANDER;           //initializing to initial state
   digitalWrite(LineLeftOuter,LOW);       //turn off outer IR light sources
   digitalWrite(LineRightOuter,LOW);
 }
@@ -80,12 +80,13 @@ void loop(){
   //if both sensors on black then we need to turn around
   if((rightLine < OB_THRESH_R) and (leftLine < OB_THRESH_L)) STATE = TURN_AROUND;
 
-  //case one is for right object detection
+  //case two is for right object detection
   else if(rightLine < OB_THRESH_R) STATE = VEER_L;
 
-  //case two is for left obj detection
+  //case three is for left obj detection
   else if(leftLine < OB_THRESH_L) STATE = VEER_R;
   
+  //default case is to wander
   else STATE = WANDER;
   
   switch(STATE){
@@ -94,16 +95,19 @@ void loop(){
     case WANDER:
       motors(leftMot, rightMot);
       break;
+    //case one, robot turns around
     case TURN_AROUND:
       spinLeft(BASE_SPEED);
       delay(300);
       motors(BASE_SPEED, BASE_SPEED);
       break;
+    //case two robot veers left
     case VEER_L:
       spinLeft(BASE_SPEED-20);
       delay(100);
       motors(BASE_SPEED, BASE_SPEED);
       break;
+    //case three robot veers right
     case VEER_R:
       spinRight(BASE_SPEED);
       delay(100);
@@ -111,9 +115,8 @@ void loop(){
       break;
   }
   
-  //Serial.print("Left: ");Serial.print( leftLine); Serial.print( "\t Right: "); Serial.print( rightLine); Serial.print("State: "); Serial.println(STATE);
-  
-  delay(30);        //wait .1 second
+ 
+  delay(30);        //wait .03 second
   
 } //closing curly of the “loop()” function
 
