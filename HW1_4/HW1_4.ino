@@ -21,7 +21,7 @@ behavior upon detecting another robot, but will otherwise roam the environment
 #define DETECT_THRESH 30 //a parameter that represents ambient light levels coincident with another robot
                           //being "visible"
 
-#define CAUGHT_THRESH 225 // a parameter that represents when ambient light levels are high enough to 
+#define CAUGHT_THRESH 205 // a parameter that represents when ambient light levels are high enough to 
                           //determine a prey is "caught"
                           
 #define LIGHT_WEIGHT_L .03   //a parameter that corresponds to a weight for left motor values
@@ -122,8 +122,8 @@ void loop(){
   leftLight = analogRead(AmbientSenseLeft);
 
   //next we set some arbitrary speeds for the robot to move in after execution 
-  rightMot = BASE_SPEED + random(-10,10);
-  leftMot = BASE_SPEED - random(-10,10);
+  rightMot = BASE_SPEED + random(-20,20);
+  leftMot = BASE_SPEED - random(-20,20);
 
   //determining if the read values are large enought to trigger state transitions
   //if both sensors on black then we need to turn around
@@ -181,11 +181,10 @@ void loop(){
 
   //Serial.print("Left: ");Serial.print( leftLight); Serial.print( "\t Right: "); Serial.print( rightLight); Serial.print("State: "); Serial.println(STATE);
 
-  delay(100);
+  delay(50);
 
 
 } //closing curly of the “loop()” function
-
 
 
 
