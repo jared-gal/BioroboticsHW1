@@ -13,7 +13,10 @@ avoidance and not much else
                            // machine language Wink can understand.
 
 
-#define BASE_SPEED 50
+#define BASE_SPEED 30
+#define OB_THRESH_L 300   //a parameter that corresponds to detecting an obstacle on the left side
+
+#define OB_THRESH_R 300   //a parameter that corresponds to detecting an obstacle on the right side
 
 #define WANDER 0
 #define TURN_AROUND 1
@@ -97,7 +100,7 @@ void loop(){
       motors(BASE_SPEED, BASE_SPEED);
       break;
     case VEER_L:
-      spinLeft(BASE_SPEED);
+      spinLeft(BASE_SPEED-20);
       delay(100);
       motors(BASE_SPEED, BASE_SPEED);
       break;
@@ -106,14 +109,13 @@ void loop(){
       delay(100);
       motors(BASE_SPEED, BASE_SPEED);
       break;
-
+  }
   
+  //Serial.print("Left: ");Serial.print( leftLine); Serial.print( "\t Right: "); Serial.print( rightLine); Serial.print("State: "); Serial.println(STATE);
   
-  
-  delay(100);        //wait .1 second
+  delay(30);        //wait .1 second
   
 } //closing curly of the “loop()” function
-
 
 
 
