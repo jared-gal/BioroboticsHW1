@@ -38,10 +38,11 @@ behavior upon detecting another robot, but will otherwise roam the environment
 //defining the states of operation
 
 #define WANDER 0
-#define VEER_L 1
-#define VEER_R 2
-#define DETECTED 3
-#define CAUGHT 4
+#define TURN_AROUND 1
+#define VEER_L 2
+#define VEER_R 3
+#define DETECTED 4
+#define CAUGHT 5
 
 
 
@@ -125,8 +126,11 @@ void loop(){
   leftMot = BASE_SPEED - random(-10,10);
 
   //determining if the read values are large enought to trigger state transitions
+  //if both sensors on black then we need to turn around
+  if((rightLine < OB_THRESH_R) and (leftLine < OB_THRESH_L)) STATE = TURN_AROUND;
+  
   //case one is for right object detection
-  if(rightLine < OB_THRESH_R) STATE = VEER_L;
+  else if(rightLine < OB_THRESH_R) STATE = VEER_L;
 
   //case two is for left obj detection
   else if(leftLine < OB_THRESH_L) STATE = VEER_R;
@@ -149,14 +153,19 @@ void loop(){
     case WANDER:
       motors(leftMot, rightMot);
       break;
-    case VEER_L:
+    case TURN_AROUND:
       spinLeft(BASE_SPEED);
       delay(300);
       motors(BASE_SPEED, BASE_SPEED);
       break;
+    case VEER_L:
+      spinLeft(BASE_SPEED);
+      delay(100);
+      motors(BASE_SPEED, BASE_SPEED);
+      break;
     case VEER_R:
       spinRight(BASE_SPEED);
-      delay(300);
+      delay(100);
       motors(BASE_SPEED, BASE_SPEED);
       break;
     case DETECTED:
@@ -170,7 +179,7 @@ void loop(){
       break;
     }
 
-  Serial.print("Left: ");Serial.print( leftLight); Serial.print( "\t Right: "); Serial.print( rightLight); Serial.print("State: "); Serial.println(STATE);
+  //Serial.print("Left: ");Serial.print( leftLight); Serial.print( "\t Right: "); Serial.print( rightLight); Serial.print("State: "); Serial.println(STATE);
 
   delay(100);
 
