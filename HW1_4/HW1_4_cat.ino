@@ -153,24 +153,29 @@ void loop(){
     case WANDER:
       motors(leftMot, rightMot);
       break;
+    //case one, robot turns around
     case TURN_AROUND:
       spinLeft(BASE_SPEED);
       delay(300);
       motors(BASE_SPEED, BASE_SPEED);
       break;
+    //case two, robot turns left
     case VEER_L:
       spinLeft(BASE_SPEED);
       delay(100);
       motors(BASE_SPEED, BASE_SPEED);
       break;
+    //case three, robot turns right
     case VEER_R:
       spinRight(BASE_SPEED);
       delay(100);
       motors(BASE_SPEED, BASE_SPEED);
       break;
+    //case four, robot detects prey
     case DETECTED:
       BV_2b(leftLight, rightLight);
       break;
+    //case five, robot has caught prey
     case CAUGHT:
       beStill();
       eyesPurple(255);
@@ -178,8 +183,6 @@ void loop(){
       eyesOff();
       break;
     }
-
-  //Serial.print("Left: ");Serial.print( leftLight); Serial.print( "\t Right: "); Serial.print( rightLight); Serial.print("State: "); Serial.println(STATE);
 
   delay(50);
 
