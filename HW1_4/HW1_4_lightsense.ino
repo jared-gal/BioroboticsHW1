@@ -1,11 +1,9 @@
 /*
 Jared Gallina
 jdg272
-Biorobotics HW #1 Q4 Predator schema
+Biorobotics HW #1 Q4 Calibration
 
-The objective of this program is to create a schema that emulates a predator like 
-behavior upon detecting another robot, but will otherwise roam the environment 
-"searching" for prey
+The purpose of this file is to simply measure the ambient light values to clibrate the cat program
 */
 
 //*****************************************************************************************************
@@ -15,7 +13,7 @@ behavior upon detecting another robot, but will otherwise roam the environment
 //*****************************************************************************************************
                           
 //below are the relevant variables to this program
-//predator shema variables
+//light sensor values
 float rightLight;         //read value of the right light sensor
 float leftLight;          //read value of the right light sensor
 
@@ -38,11 +36,11 @@ about the environment in search of prey.
 
 void loop(){
 
-  //The first step of the loop is to find the measure of all sensors to determine what state should be entered
-  //next is to read the Ambient Sensors 
+  //measure the light values 
   rightLight = analogRead(AmbientSenseRight);
   leftLight = analogRead(AmbientSenseLeft);
 
+  //display the measured values to the screen
   Serial.print("Left: "); Serial.print(leftLight); Serial.print("Right: "); Serial.println(rightLight); 
 
   delay(50);
