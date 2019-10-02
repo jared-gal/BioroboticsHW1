@@ -103,7 +103,7 @@ void loop(){
       break;
     //case two robot veers left
     case VEER_L:
-      spinLeft(BASE_SPEED-20);
+      spinLeft(BASE_SPEED);
       delay(100);
       motors(BASE_SPEED, BASE_SPEED);
       break;
